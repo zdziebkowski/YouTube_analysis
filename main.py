@@ -32,5 +32,28 @@ def get_channel_stats(youtube: any, channel_id: str) -> tuple:
     return response['items'][0]['snippet']['title'], response['items'][0]['statistics']
 
 
+def get_uploads_playlist_id(youtube: any, channel_id: str) -> str:
+    """
+    Retrieve the uploads playlist ID for a specified YouTube channel.
+
+    Args:
+        youtube (any): The YouTube API service object.
+        channel_id (str): The ID of the YouTube channel.
+
+    Returns:
+        str: The uploads playlist ID.
+    """
+    request = youtube.channels().list(
+        part='contentDetails',
+        id=channel_id
+    )
+    response = request.execute()
+    uploads_playlist_id = response['items'][0]
+    #uploads_playlist_id = response['items'][0]['contentDetails']['relatedPlaylists']['uploads']
+    return uploads_playlist_id
+
+
 channel_stats = get_channel_stats(youtube, channel_id)
+upload_playlist = get_uploads_playlist_id(youtube, channel_id)
 print(channel_stats)
+print(upload_playlist)
