@@ -1,3 +1,4 @@
 /venv/
 /Jupyter_test.ipynb
-/youtube_api.log
+/logs/youtube_api.log
+/.ipynb_checkpoints/

@@ -103,8 +103,8 @@ def calculate_all_metrics(df: pd.DataFrame) -> None:
 
 
 if __name__ == "__main__":
-    channel_stats_path = 'channel_stats.csv'
-    video_stats_path = 'video_stats.csv'
+    channel_stats_path = 'data/channel_stats.csv'
+    video_stats_path = 'data/video_stats.csv'
     channel_info = load_data(channel_stats_path)
     video_info = load_data(video_stats_path)
     video_info = process_data(video_info)

@@ -9,7 +9,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler("youtube_api.log"),
+        logging.FileHandler("logs/youtube_api.log"),
         logging.StreamHandler()
     ]
 )
@@ -127,9 +127,9 @@ def main():
     save_data_to_csv(channel_stats, video_details)
 
     print("Channel Stats DataFrame")
-    print(pd.read_csv('channel_stats.csv'))
+    print(pd.read_csv('data/channel_stats.csv'))
     print("Video Details DataFrame")
-    print(pd.read_csv('video_stats.csv'))
+    print(pd.read_csv('data/video_stats.csv'))
 
 
 if __name__ == "__main__":
