@@ -1,5 +1,6 @@
 import isodate
 import pandas as pd
+import os
 
 
 def load_data(file_path: str) -> pd.DataFrame:
@@ -40,6 +41,8 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     df['date'] = pd.to_datetime(df['date']).dt.date
     # convert duration from ISO8601 to seconds
     df['duration'] = df['duration'].apply(lambda x: isodate.parse_duration(x).total_seconds())
+    # create cumulative views column
+    df = df.sort_values(by='date').assign(cumulative_views=df['views'].cumsum())
 
     return df
 
@@ -103,8 +106,9 @@ def calculate_all_metrics(df: pd.DataFrame) -> None:
 
 
 if __name__ == "__main__":
-    channel_stats_path = 'data/channel_stats.csv'
-    video_stats_path = 'data/video_stats.csv'
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    channel_stats_path = os.path.join(base_dir, 'data', 'channel_stats.csv')
+    video_stats_path = os.path.join(base_dir, 'data', 'video_stats.csv')
     channel_info = load_data(channel_stats_path)
     video_info = load_data(video_stats_path)
     video_info = process_data(video_info)

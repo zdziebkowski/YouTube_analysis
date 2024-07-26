@@ -95,7 +95,7 @@ def get_all_videos_and_details(youtube: Resource, channel_id: str) -> List[Dict]
     return video_details
 
 
-def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict]) -> None:
+def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict], base_dir: str) -> None:
     """Save channel statistics and video details to CSV files."""
     channel_info = pd.DataFrame([channel_stats], columns=['title', 'subscriberCount', 'viewCount', 'videoCount'])
     video_data = [
@@ -112,8 +112,12 @@ def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict]) -
         for video in video_details
     ]
     video_df = pd.DataFrame(video_data)
-    channel_info.to_csv('channel_stats.csv', index=False)
-    video_df.to_csv('video_stats.csv', index=False)
+
+    channel_info_path = os.path.join(base_dir, 'data', 'channel_stats.csv')
+    video_stats_path = os.path.join(base_dir, 'data', 'video_stats.csv')
+
+    channel_info.to_csv(channel_info_path, index=False)
+    video_df.to_csv(video_stats_path, index=False)
 
 
 def main():
@@ -124,12 +128,13 @@ def main():
     channel_stats = get_channel_stats(youtube, channel_id)
     video_details = get_all_videos_and_details(youtube, channel_id)
 
-    save_data_to_csv(channel_stats, video_details)
+    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    save_data_to_csv(channel_stats, video_details, base_dir)
 
     print("Channel Stats DataFrame")
-    print(pd.read_csv('data/channel_stats.csv'))
+    print(pd.read_csv(os.path.join(base_dir, 'data', 'channel_stats.csv')))
     print("Video Details DataFrame")
-    print(pd.read_csv('data/video_stats.csv'))
+    print(pd.read_csv(os.path.join(base_dir, 'data', 'video_stats.csv')))
 
 
 if __name__ == "__main__":
