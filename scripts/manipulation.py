@@ -34,7 +34,7 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.drop(columns=['dislikes'])
     # fill missing values in description to add sponsor column
     df['description'] = df['description'].fillna('')
-    df['sponsor'] = df['description'].apply(lambda x: 'XTB' if 'XTB' in x else None)
+    df['sponsor'] = df['description'].apply(lambda x: 'XTB' if 'XTB' in x else 'No sponsor')
     # drop description column after processing
     df = df.drop(columns=['description'])
     # convert date to datetime and extract date only
@@ -46,70 +46,23 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-
-def calculate_total_views(df: pd.DataFrame) -> int:
-    return df['views'].sum()
-
-
-def calculate_average_views_per_video(df: pd.DataFrame) -> float:
-    return df['views'].mean()
-
-
-def calculate_average_comments_per_video(df: pd.DataFrame) -> float:
-    return df['comments'].mean()
-
-
-def calculate_engagement_rate(df: pd.DataFrame) -> float:
-    total_views = df['views'].sum()
-    if total_views == 0:
-        return 0.0
-    return (df['likes'] + df['comments']).sum() / total_views
-
-
-def calculate_total_video_time(df: pd.DataFrame) -> float:
-    return df['duration'].sum()
-
-
-def calculate_average_video_time(df: pd.DataFrame) -> float:
-    return df['duration'].mean()
-
-
-def calculate_likes_to_comments_ratio(df: pd.DataFrame) -> float:
-    total_comments = df['comments'].sum()
-    if total_comments == 0:
-        return 0.0
-    return df['likes'].sum() / total_comments
-
-
-def calculate_all_metrics(df: pd.DataFrame) -> None:
+def save_data(df: pd.DataFrame, file_path: str) -> None:
     """
-    Calculate and print all metrics.
+    Save DataFrame to a CSV file.
 
     Args:
-        df (pd.DataFrame): DataFrame containing processed statistics.
+        df (pd.DataFrame): DataFrame to be saved.
+        file_path (str): Path to the CSV file (can be a file name or an absolute path).
     """
-    total_views = calculate_total_views(df)
-    average_views_per_video = calculate_average_views_per_video(df)
-    average_comments_per_video = calculate_average_comments_per_video(df)
-    engagement_rate = calculate_engagement_rate(df)
-    total_video_time = calculate_total_video_time(df)
-    average_video_time = calculate_average_video_time(df)
-    likes_to_comments_ratio = calculate_likes_to_comments_ratio(df)
-
-    print(f"\nTotal views: {total_views}")
-    print(f"Average views per video: {average_views_per_video:.2f}")
-    print(f"Average comments per video: {average_comments_per_video:.2f}")
-    print(f"Engagement rate: {engagement_rate:.4f}")
-    print(f"Total video time (seconds): {total_video_time}")
-    print(f"Average video time (seconds): {average_video_time:.2f}")
-    print(f"Likes to comments ratio: {likes_to_comments_ratio:.2f}")
+    df.to_csv(file_path, index=False)
 
 
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    channel_stats_path = os.path.join(base_dir, 'data', 'channel_stats.csv')
     video_stats_path = os.path.join(base_dir, 'data', 'video_stats.csv')
-    channel_info = load_data(channel_stats_path)
+
     video_info = load_data(video_stats_path)
     video_info = process_data(video_info)
-    calculate_all_metrics(video_info)
+
+    processed_video_stats_path = os.path.join(base_dir, 'data', 'processed_video_stats.csv')
+    save_data(video_info, processed_video_stats_path)
