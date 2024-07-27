@@ -43,7 +43,10 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     df['duration'] = df['duration'].apply(lambda x: isodate.parse_duration(x).total_seconds())
     # create cumulative views column
     df = df.sort_values(by='date').assign(cumulative_views=df['views'].cumsum())
-
+    # add and ID column
+    df['ID'] = range(1, len(df) + 1)
+    # add ID to title
+    df['title'] = df['ID'].astype(str) + '. ' + df['title']
     return df
 
 def save_data(df: pd.DataFrame, file_path: str) -> None:
