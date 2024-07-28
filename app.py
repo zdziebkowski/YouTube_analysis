@@ -67,7 +67,7 @@ def get_filtered_data(df: pd.DataFrame, date_range: tuple, sponsor: str) -> pd.D
 
 
 ui.page_opts(
-    title="Youtube analysis",
+    title="Youtube analysis - XTB partnership",
     page_fn=partial(page_navbar, id="page", fillable=True),
 )
 
@@ -200,7 +200,8 @@ with ui.nav_panel("Analysis"):
         @render_plotly(height='600px')
         def plot_engagement_analysis():
             """
-            Generate a scatter plot for engagement analysis: likes vs. comments, with point sizes indicating views and hover text showing video titles.
+            Generate a scatter plot for engagement analysis: likes vs. comments, with point sizes indicating views
+            and hover text showing video titles.
             """
             filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
             fig = px.scatter(filtered_df, x='likes', y='comments', size='views', hover_name='title',
@@ -214,7 +215,8 @@ with ui.nav_panel("Analysis"):
             @render_plotly(height='600px')
             def plot_sponsor_impact():
                 """
-                Generate a bar chart comparing average views, likes, and comments for sponsored vs. non-sponsored videos.
+                Generate a bar chart comparing average views, likes, and comments for sponsored vs. non-sponsored
+                videos.
                 """
                 filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
                 sponsor_impact = filtered_df.groupby('sponsor').agg(
