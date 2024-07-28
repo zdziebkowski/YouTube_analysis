@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from shinywidgets import render_plotly, render_widget
 from shiny.express import input, render, ui
+from shiny import reactive, render
 
 df = pd.read_csv(r'C:\Users\wojci\PycharmProjects\YouTubeAPI\data\processed_video_stats.csv')
 
@@ -29,37 +30,67 @@ ui.input_slider("date_range", "Filter by date",
                 value=[string_to_date(x) for x in ['2017-03-04', '2024-07-25']]
                 )
 
+ui.input_select(
+    "select",
+    "Filter by sponsor:",
+    {"All": "All", "XTB": "XTB", "No sponsor": "No sponsor"},
+)
 
 @render_plotly
 def plot_cumulative_views():
     """
     This function generates a line chart of cumulative views over time from the provided DataFrame.
     """
-    my_df = df
-    my_df = filter_by_date(my_df, input.date_range())
-    fig = px.line(my_df, x='date', y='cumulative_views', title='Cumulative Views Over Time')
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range())
+
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    fig = px.line(list_df, x='date', y='cumulative_views', title='Cumulative Views Over Time')
     return fig
 
 
-
-@render_widget
+@render_plotly
 def plot_time_series_trends():
     """
     This function generates a line chart showing the trends of views, likes, and comments over time from the provided DataFrame.
     """
-    df_melted = df.melt(id_vars=['date'], value_vars=['views', 'likes', 'comments'], var_name='Metric',
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range())
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    df_melted = list_df.melt(id_vars=['date'], value_vars=['views', 'likes', 'comments'], var_name='Metric',
                         value_name='Count')
     fig = px.line(df_melted, x='date', y='Count', color='Metric', title='Views, Likes, Comments Over Time')
     return fig
 
 
-@render_widget
+@render_plotly
 def plot_duration_distribution():
     """
     This function generates a histogram showing the distribution of video durations.
     """
-    df['duration'] = pd.to_numeric(df['duration'], errors='coerce')
-    fig = px.histogram(df, x='duration', nbins=50, title='Distribution of Video Durations',
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range()).copy()
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    list_df['duration'] = pd.to_numeric(list_df['duration'], errors='coerce')
+    fig = px.histogram(filtered_df, x='duration', nbins=50, title='Distribution of Video Durations',
                        labels={'duration': 'Duration (seconds)'})
     fig.update_layout(
         xaxis_title='Duration (seconds)',
@@ -69,14 +100,23 @@ def plot_duration_distribution():
     return fig
 
 
-@render_widget
+@render_plotly
 def plot_top_performing_videos():
     """
     This function generates a bar chart displaying the top 10 performing videos by views, likes, and comments.
     """
-    top_views = df.nlargest(10, 'views')
-    top_likes = df.nlargest(10, 'likes')
-    top_comments = df.nlargest(10, 'comments')
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range())
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    top_views = list_df.nlargest(10, 'views')
+    top_likes = list_df.nlargest(10, 'likes')
+    top_comments = list_df.nlargest(10, 'comments')
     top_videos = pd.concat([top_views, top_likes, top_comments]).drop_duplicates().head(10)
     fig = make_subplots(rows=1, cols=1)
     fig.add_trace(
@@ -97,13 +137,22 @@ def plot_top_performing_videos():
     return fig
 
 
-@render_widget
+@render_plotly
 def plot_engagement_analysis():
     """
     This function generates a scatter plot for engagement analysis: likes vs. comments,
     with point sizes indicating views and hover text showing video titles.
     """
-    fig = px.scatter(df, x='likes', y='comments', size='views', hover_name='title',
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range())
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    fig = px.scatter(list_df, x='likes', y='comments', size='views', hover_name='title',
                      title='Engagement Analysis: Likes vs. Comments',
                      labels={'likes': 'Likes', 'comments': 'Comments'},
                      size_max=60)
@@ -115,12 +164,21 @@ def plot_engagement_analysis():
     return fig
 
 
-@render_widget
+@render_plotly
 def plot_sponsor_impact():
     """
     This function generates a bar chart comparing average views, likes, and comments for sponsored vs. non-sponsored videos.
     """
-    sponsor_impact = df.groupby('sponsor').agg({'views': 'mean', 'likes': 'mean', 'comments': 'mean'}).reset_index()
+    filtered_df = df
+    filtered_df = filter_by_date(filtered_df, input.date_range())
+    if input.select() == 'XTB':
+        list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+    elif input.select() == 'No sponsor':
+        list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+    else:
+        list_df = filtered_df
+
+    sponsor_impact = list_df.groupby('sponsor').agg({'views': 'mean', 'likes': 'mean', 'comments': 'mean'}).reset_index()
     sponsor_impact_melted = sponsor_impact.melt(id_vars=['sponsor'], value_vars=['views', 'likes', 'comments'],
                                                 var_name='Metric', value_name='Average')
     fig = px.bar(sponsor_impact_melted, x='sponsor', y='Average', color='Metric', barmode='group',
