@@ -44,14 +44,26 @@ def plot_cumulative_views():
     filtered_df = df
     filtered_df = filter_by_date(filtered_df, input.date_range())
 
+    fig = go.Figure()
+
     if input.select() == 'XTB':
         list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
+        fig.add_trace(
+            go.Scatter(x=list_df['date'], y=list_df['cumulative_views_XTB'], mode='lines', name='Cumulative Views XTB'))
     elif input.select() == 'No sponsor':
         list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
+        fig.add_trace(go.Scatter(x=list_df['date'], y=list_df['cumulative_views_No_sponsor'], mode='lines',
+                                 name='Cumulative Views No Sponsor'))
     else:
-        list_df = filtered_df
+        fig.add_trace(
+            go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views'], mode='lines', name='Cumulative Views'))
+        fig.add_trace(go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_XTB'], mode='lines',
+                                 name='Cumulative Views XTB'))
+        fig.add_trace(go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_No_sponsor'], mode='lines',
+                                 name='Cumulative Views No Sponsor'))
 
-    fig = px.line(list_df, x='date', y='cumulative_views', title='Cumulative Views Over Time')
+    fig.update_layout(title='Cumulative Views Over Time', xaxis_title='Date', yaxis_title='Cumulative Views')
+
     return fig
 
 

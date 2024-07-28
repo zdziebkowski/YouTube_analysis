@@ -44,6 +44,16 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     # create cumulative views column
     df = df.sort_values(by='date')
     df['cumulative_views'] = df['views'].cumsum()
+    df['cumulative_views_XTB'] = df.apply(lambda row: row['views'] if row['sponsor'] == 'XTB' else 0, axis=1).cumsum()
+    df['cumulative_views_No_sponsor'] = df.apply(lambda row: row['views'] if row['sponsor'] == 'No sponsor' else 0,
+                                                 axis=1).cumsum()
+
+    # fill the cumulative columns to ensure they do not reset to zero
+    df['cumulative_views_XTB'] = df['cumulative_views_XTB'].replace(0, pd.NA).ffill().fillna(0).infer_objects(
+        copy=False)
+    df['cumulative_views_No_sponsor'] = df['cumulative_views_No_sponsor'].replace(0, pd.NA).ffill().fillna(
+        0).infer_objects(copy=False)
+
     # add and ID column
     df['ID'] = range(1, len(df) + 1)
     # add ID to title
