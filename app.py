@@ -38,7 +38,8 @@ with ui.nav_panel("Analysis"):
 
             @render.text
             def total_views():
-                total_views = df_videos['views'].sum()
+                filtered_df = filter_by_date(df_videos, input.date_range())
+                total_views = filtered_df['views'].sum()
                 return f"{total_views:,}".replace(',', ' ')
 
         with ui.value_box(showcase=icon_svg("chart-line")):
@@ -47,7 +48,8 @@ with ui.nav_panel("Analysis"):
 
             @render.text
             def avg_views():
-                average_views = df_videos['views'].mean()
+                filtered_df = filter_by_date(df_videos, input.date_range())
+                average_views = filtered_df['views'].mean()
                 return f"{average_views:,.0f}".replace(',', ' ')
 
         with ui.value_box(showcase=icon_svg("hand-point-up")):
@@ -56,9 +58,10 @@ with ui.nav_panel("Analysis"):
 
             @render.text
             def engagement_rate():
-                total_views = df_videos['views'].sum()
-                total_likes = df_videos['likes'].sum()
-                total_comments = df_videos['comments'].sum()
+                filtered_df = filter_by_date(df_videos, input.date_range())
+                total_views = filtered_df['views'].sum()
+                total_likes = filtered_df['likes'].sum()
+                total_comments = filtered_df['comments'].sum()
                 engagement_rate = (total_likes + total_comments) / total_views * 100
                 return f"{engagement_rate:,.2f}%".replace(',', ' ')
 
@@ -158,7 +161,8 @@ with ui.nav_panel("Analysis"):
                             """
                             Generate a bar chart displaying the top 5 videos by likes per 1000 views and comments per 100 views for videos with No sponsor.
                             """
-                            filtered_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                         input.date_range())
                             filtered_df['likes_per_1000_views'] = filtered_df['likes'] / (filtered_df['views'] / 1000)
                             filtered_df['comments_per_1000_views'] = filtered_df['comments'] / (
                                     filtered_df['views'] / 1000)
@@ -192,7 +196,7 @@ with ui.nav_panel("Analysis"):
                             """
                             Generate a bar chart displaying the top 5 videos by likes per 1000 views and comments per 100 views for videos with XTB sponsor.
                             """
-                            filtered_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'], input.date_range())
                             filtered_df['likes_per_1000_views'] = filtered_df['likes'] / (filtered_df['views'] / 1000)
                             filtered_df['comments_per_1000_views'] = filtered_df['comments'] / (
                                     filtered_df['views'] / 1000)
@@ -230,15 +234,17 @@ with ui.nav_panel("Analysis"):
                             """
                             Generate a boxplot for views for No sponsor and XTB videos.
                             """
-                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
-                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+                            filtered_no_sponsor_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                                    input.date_range())
+                            filtered_xtb_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'],
+                                                             input.date_range())
 
                             fig = go.Figure()
 
                             fig.add_trace(
-                                go.Box(y=no_sponsor_df['views'], name='No sponsor', marker_color='#006E90'))
+                                go.Box(y=filtered_no_sponsor_df['views'], name='No sponsor', marker_color='#006E90'))
                             fig.add_trace(
-                                go.Box(y=xtb_df['views'], name='XTB', marker_color='#B80C09'))
+                                go.Box(y=filtered_xtb_df['views'], name='XTB', marker_color='#B80C09'))
 
                             fig.update_layout(
                                 title=dict(text='Views for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
@@ -255,15 +261,17 @@ with ui.nav_panel("Analysis"):
                             """
                             Generate a boxplot for comments for No sponsor and XTB videos.
                             """
-                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
-                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+                            filtered_no_sponsor_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                                    input.date_range())
+                            filtered_xtb_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'],
+                                                             input.date_range())
 
                             fig = go.Figure()
 
                             fig.add_trace(
-                                go.Box(y=no_sponsor_df['comments'], name='No sponsor', marker_color='#006E90'))
+                                go.Box(y=filtered_no_sponsor_df['comments'], name='No sponsor', marker_color='#006E90'))
                             fig.add_trace(
-                                go.Box(y=xtb_df['comments'], name='XTB', marker_color='#B80C09'))
+                                go.Box(y=filtered_xtb_df['comments'], name='XTB', marker_color='#B80C09'))
 
                             fig.update_layout(
                                 title=dict(text='Comments for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
@@ -280,15 +288,17 @@ with ui.nav_panel("Analysis"):
                             """
                             Generate a boxplot for likes for No sponsor and XTB videos.
                             """
-                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
-                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+                            filtered_no_sponsor_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                                    input.date_range())
+                            filtered_xtb_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'],
+                                                             input.date_range())
 
                             fig = go.Figure()
 
                             fig.add_trace(
-                                go.Box(y=no_sponsor_df['likes'], name='No sponsor', marker_color='#006E90'))
+                                go.Box(y=filtered_no_sponsor_df['likes'], name='No sponsor', marker_color='#006E90'))
                             fig.add_trace(
-                                go.Box(y=xtb_df['likes'], name='XTB', marker_color='#B80C09'))
+                                go.Box(y=filtered_xtb_df['likes'], name='XTB', marker_color='#B80C09'))
 
                             fig.update_layout(
                                 title=dict(text='Likes for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
@@ -356,4 +366,5 @@ with ui.nav_panel("Data"):
 
     @render.data_frame
     def videos_df():
-        return render.DataGrid(df_videos)
+        filtered_df = filter_by_date(df_videos, input.date_range())
+        return render.DataGrid(filtered_df)
