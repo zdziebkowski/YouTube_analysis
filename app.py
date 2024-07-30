@@ -1,16 +1,16 @@
-from pathlib import Path
 from functools import partial
+from pathlib import Path
+
 import pandas as pd
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+from faicons import icon_svg
 from shiny import render
 from shiny.express import input, ui
 from shiny.ui import page_navbar
 from shinywidgets import render_plotly
-from faicons import icon_svg
 
-from utils.helpers import string_to_date, filter_by_date, get_filtered_data
+from utils.helpers import string_to_date, filter_by_date
 
 data_dir = Path(__file__).parent / 'data'
 df_videos = pd.read_csv(data_dir / 'processed_video_stats.csv')
@@ -31,6 +31,7 @@ with ui.nav_panel("Analysis"):
             def total_subs():
                 total_subscribers = df_channel['subscriberCount'].iloc[0]
                 return f"{total_subscribers:,}".replace(',', ' ')
+
         with ui.value_box(showcase=icon_svg("eye")):
             "Total views"
 
@@ -39,6 +40,7 @@ with ui.nav_panel("Analysis"):
             def total_views():
                 total_views = df_videos['views'].sum()
                 return f"{total_views:,}".replace(',', ' ')
+
         with ui.value_box(showcase=icon_svg("chart-line")):
             "Average views"
 
@@ -47,6 +49,7 @@ with ui.nav_panel("Analysis"):
             def avg_views():
                 average_views = df_videos['views'].mean()
                 return f"{average_views:,.0f}".replace(',', ' ')
+
         with ui.value_box(showcase=icon_svg("hand-point-up")):
             "Engagement Rate"
 
@@ -68,130 +71,284 @@ with ui.nav_panel("Analysis"):
                             value=[string_to_date(x) for x in ['2017-03-04', '2024-07-25']]
                             )
 
-            ui.input_select(
-                "select",
-                "Filter by sponsor:",
-                {"All": "All", "XTB": "XTB", "No sponsor": "No sponsor"},
-            )
+        with ui.layout_column_wrap(fill=False):
+            with ui.card():
+                "Cumulative Views Over Time"
 
 
-        @render_plotly(height='600px')
-        def plot_cumulative_views():
-            """
-            This function generates a line chart of cumulative views over time from the provided DataFrame.
-            """
-            filtered_df = df_videos
-            filtered_df = filter_by_date(filtered_df, input.date_range())
+                @render_plotly
+                def plot_cumulative_views_all():
+                    """
+                    This function generates a line chart of cumulative views over time for all data.
+                    """
+                    filtered_df = filter_by_date(df_videos, input.date_range())
+                    fig = go.Figure()
 
-            fig = go.Figure()
+                    fig.add_trace(
+                        go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views'], mode='lines',
+                                   name='Cumulative Views', line=dict(color='#1A1B41')))
 
-            if input.select() == 'XTB':
-                list_df = filtered_df[filtered_df['sponsor'] == 'XTB'].copy()
-                fig.add_trace(
-                    go.Scatter(x=list_df['date'], y=list_df['cumulative_views_XTB'], mode='lines',
-                               name='Cumulative Views XTB'))
-            elif input.select() == 'No sponsor':
-                list_df = filtered_df[filtered_df['sponsor'] == 'No sponsor'].copy()
-                fig.add_trace(go.Scatter(x=list_df['date'], y=list_df['cumulative_views_No_sponsor'], mode='lines',
-                                         name='Cumulative Views No Sponsor'))
-            else:
-                fig.add_trace(
-                    go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views'], mode='lines',
-                               name='Cumulative Views'))
-                fig.add_trace(go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_XTB'], mode='lines',
-                                         name='Cumulative Views XTB'))
-                fig.add_trace(
-                    go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_No_sponsor'], mode='lines',
-                               name='Cumulative Views No Sponsor'))
-
-            fig.update_layout(title='Cumulative Views Over Time', xaxis_title='Date', yaxis_title='Cumulative Views')
-
-            return fig
+                    fig.update_layout(
+                        title=dict(text='All data', font=dict(color='#1A1B41')),
+                        xaxis_title='Date',
+                        yaxis_title='Cumulative Views',
+                        plot_bgcolor='rgba(0,0,0,0)',
+                        xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                        yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                    )
+                    return fig
 
 
-        @render_plotly(height='600px')
-        def plot_time_series_trends():
-            """
-            Generate a line chart showing trends of views, likes, and comments over time.
-            """
-            filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
-            df_melted = filtered_df.melt(id_vars=['date'], value_vars=['views', 'likes', 'comments'], var_name='Metric',
-                                         value_name='Count')
-            fig = px.line(df_melted, x='date', y='Count', color='Metric', title='Views, Likes, Comments Over Time')
-            return fig
+                with ui.layout_column_wrap(width=1 / 2):
+                    with ui.card():
+                        @render_plotly
+                        def plot_cumulative_views_no_sponsor():
+                            """
+                            This function generates a line chart of cumulative views over time for videos with No sponsor.
+                            """
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                         input.date_range())
+                            fig = go.Figure()
 
+                            fig.add_trace(
+                                go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_No_sponsor'],
+                                           mode='lines',
+                                           name='Cumulative Views No Sponsor', line=dict(color='#006E90')))
 
-        @render_plotly(height='600px')
-        def plot_top_performing_videos():
-            """
-            Generate a bar chart displaying the top 10 performing videos by views, likes, and comments.
-            """
-            filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
-            top_views = filtered_df.nlargest(10, 'views')
-            top_likes = filtered_df.nlargest(10, 'likes')
-            top_comments = filtered_df.nlargest(10, 'comments')
-            top_videos = pd.concat([top_views, top_likes, top_comments]).drop_duplicates().head(10)
+                            fig.update_layout(
+                                title=dict(text='No sponsor', font=dict(color='#006E90')),
+                                xaxis_title='Date',
+                                yaxis_title='Cumulative Views',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
 
-            # Truncate titles to the first 15 characters
-            top_videos['short_title'] = top_videos['title'].str.slice(0, 30) + '...'
+                    with ui.card():
+                        @render_plotly
+                        def plot_cumulative_views_xtb():
+                            """
+                            This function generates a line chart of cumulative views over time for videos with XTB sponsor.
+                            """
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'], input.date_range())
+                            fig = go.Figure()
 
-            fig = make_subplots(rows=1, cols=1)
-            fig.add_trace(
-                go.Bar(x=top_videos['short_title'], y=top_videos['views'], name='Views', marker=dict(color='blue')))
-            fig.add_trace(
-                go.Bar(x=top_videos['short_title'], y=top_videos['likes'], name='Likes', marker=dict(color='red')))
-            fig.add_trace(go.Bar(x=top_videos['short_title'], y=top_videos['comments'], name='Comments',
-                                 marker=dict(color='green')))
-            fig.update_layout(title='Top Performing Videos by Views, Likes, Comments', xaxis_title='Video Title',
-                              yaxis_title='Count', barmode='group')
-            return fig
+                            fig.add_trace(
+                                go.Scatter(x=filtered_df['date'], y=filtered_df['cumulative_views_XTB'], mode='lines',
+                                           name='Cumulative Views XTB', line=dict(color='#B80C09')))
 
+                            fig.update_layout(
+                                title=dict(text='XTB', font=dict(color='#B80C09')),
+                                xaxis_title='Date',
+                                yaxis_title='Cumulative Views',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
 
-        @render_plotly(height='600px')
-        def plot_engagement_analysis():
-            """
-            Generate a scatter plot for engagement analysis: likes vs. comments, with point sizes indicating views
-            and hover text showing video titles.
-            """
-            filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
-            fig = px.scatter(filtered_df, x='likes', y='comments', size='views', hover_name='title',
-                             title='Engagement Analysis: Likes vs. Comments',
-                             labels={'likes': 'Likes', 'comments': 'Comments'}, size_max=60)
-            fig.update_layout(xaxis_title='Likes', yaxis_title='Comments', hovermode='closest')
-            return fig
+        with ui.layout_column_wrap(fill=False):
+            with ui.card():
+                "Top Performing Videos"
+                with ui.layout_column_wrap(width=1 / 2):
+                    with ui.card():
+                        @render_plotly
+                        def plot_top_performing_videos_no_sponsor():
+                            """
+                            Generate a bar chart displaying the top 5 videos by likes per 1000 views and comments per 100 views for videos with No sponsor.
+                            """
+                            filtered_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
+                            filtered_df['likes_per_1000_views'] = filtered_df['likes'] / (filtered_df['views'] / 1000)
+                            filtered_df['comments_per_1000_views'] = filtered_df['comments'] / (
+                                    filtered_df['views'] / 1000)
+                            top_videos = filtered_df.nlargest(5, ['likes_per_1000_views', 'comments_per_1000_views'])
 
+                            # Truncate titles to the first 30 characters
+                            top_videos['short_title'] = top_videos['title'].str.slice(0, 30) + '...'
 
-        with ui.layout_columns():
-            @render_plotly(height='600px')
-            def plot_sponsor_impact():
-                """
-                Generate a bar chart comparing average views, likes, and comments for sponsored vs. non-sponsored
-                videos.
-                """
-                filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
-                sponsor_impact = filtered_df.groupby('sponsor').agg(
-                    {'views': 'mean', 'likes': 'mean', 'comments': 'mean'}).reset_index()
-                sponsor_impact_melted = sponsor_impact.melt(id_vars=['sponsor'],
-                                                            value_vars=['views', 'likes', 'comments'],
-                                                            var_name='Metric', value_name='Average')
-                fig = px.bar(sponsor_impact_melted, x='sponsor', y='Average', color='Metric', barmode='group',
-                             title='Sponsor Impact on Views, Likes, Comments',
-                             labels={'sponsor': 'Sponsor', 'Average': 'Average Count'})
-                fig.update_layout(xaxis_title='Sponsor Status', yaxis_title='Average Count', bargap=0.2)
-                return fig
+                            fig = go.Figure()
+                            fig.add_trace(
+                                go.Bar(x=top_videos['short_title'], y=top_videos['likes_per_1000_views'],
+                                       name='Likes per 1000 Views', marker=dict(color='#006E90')))
+                            fig.add_trace(
+                                go.Bar(x=top_videos['short_title'], y=top_videos['comments_per_1000_views'],
+                                       name='Comments per 1000 Views', marker=dict(color='#3B8DE6')))
 
+                            fig.update_layout(
+                                title=dict(text='No sponsor', font=dict(color='#006E90')),
+                                xaxis_title='Video Title',
+                                yaxis_title='Rate',
+                                barmode='group',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
 
-            @render_plotly(height='600px')
-            def plot_duration_distribution():
-                """
-                Generate a histogram showing the distribution of video durations.
-                """
-                filtered_df = get_filtered_data(df_videos, input.date_range(), input.select())
-                filtered_df['duration'] = pd.to_numeric(filtered_df['duration'], errors='coerce')
-                fig = px.histogram(filtered_df, x='duration', nbins=50, title='Distribution of Video Durations',
-                                   labels={'duration': 'Duration (seconds)'})
-                fig.update_layout(xaxis_title='Duration (seconds)', yaxis_title='Number of Videos', bargap=0.2)
-                return fig
+                    with ui.card():
+                        @render_plotly
+                        def plot_top_performing_videos_xtb():
+                            """
+                            Generate a bar chart displaying the top 5 videos by likes per 1000 views and comments per 100 views for videos with XTB sponsor.
+                            """
+                            filtered_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+                            filtered_df['likes_per_1000_views'] = filtered_df['likes'] / (filtered_df['views'] / 1000)
+                            filtered_df['comments_per_1000_views'] = filtered_df['comments'] / (
+                                    filtered_df['views'] / 1000)
+                            top_videos = filtered_df.nlargest(5, ['likes_per_1000_views', 'comments_per_1000_views'])
+
+                            # Truncate titles to the first 30 characters
+                            top_videos['short_title'] = top_videos['title'].str.slice(0, 30) + '...'
+
+                            fig = go.Figure()
+                            fig.add_trace(
+                                go.Bar(x=top_videos['short_title'], y=top_videos['likes_per_1000_views'],
+                                       name='Likes per 1000 Views', marker=dict(color='#B80C09')))
+                            fig.add_trace(
+                                go.Bar(x=top_videos['short_title'], y=top_videos['comments_per_1000_views'],
+                                       name='Comments per 1000 Views', marker=dict(color='#F38743')))
+
+                            fig.update_layout(
+                                title=dict(text='XTB', font=dict(color='#B80C09')),
+                                xaxis_title='Video Title',
+                                yaxis_title='Rate',
+                                barmode='group',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
+
+        with ui.layout_column_wrap(fill=False):
+            with ui.card():
+                "Views, Comments and Likes Distribution"
+                with ui.layout_column_wrap(fill=False):
+                    with ui.card():
+                        @render_plotly
+                        def plot_boxplot_views():
+                            """
+                            Generate a boxplot for views for No sponsor and XTB videos.
+                            """
+                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
+                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+
+                            fig = go.Figure()
+
+                            fig.add_trace(
+                                go.Box(y=no_sponsor_df['views'], name='No sponsor', marker_color='#006E90'))
+                            fig.add_trace(
+                                go.Box(y=xtb_df['views'], name='XTB', marker_color='#B80C09'))
+
+                            fig.update_layout(
+                                title=dict(text='Views for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
+                                yaxis_title='Views',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
+
+                    with ui.card():
+                        @render_plotly
+                        def plot_boxplot_comments():
+                            """
+                            Generate a boxplot for comments for No sponsor and XTB videos.
+                            """
+                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
+                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+
+                            fig = go.Figure()
+
+                            fig.add_trace(
+                                go.Box(y=no_sponsor_df['comments'], name='No sponsor', marker_color='#006E90'))
+                            fig.add_trace(
+                                go.Box(y=xtb_df['comments'], name='XTB', marker_color='#B80C09'))
+
+                            fig.update_layout(
+                                title=dict(text='Comments for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
+                                yaxis_title='Comments',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
+
+                    with ui.card():
+                        @render_plotly
+                        def plot_boxplot_likes():
+                            """
+                            Generate a boxplot for likes for No sponsor and XTB videos.
+                            """
+                            no_sponsor_df = df_videos[df_videos['sponsor'] == 'No sponsor'].copy()
+                            xtb_df = df_videos[df_videos['sponsor'] == 'XTB'].copy()
+
+                            fig = go.Figure()
+
+                            fig.add_trace(
+                                go.Box(y=no_sponsor_df['likes'], name='No sponsor', marker_color='#006E90'))
+                            fig.add_trace(
+                                go.Box(y=xtb_df['likes'], name='XTB', marker_color='#B80C09'))
+
+                            fig.update_layout(
+                                title=dict(text='Likes for No sponsor and XTB Videos', font=dict(color='#1A1B41')),
+                                yaxis_title='Likes',
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
+
+        with ui.layout_column_wrap(fill=False):
+            with ui.card():
+                "Distribution of video durations"
+                with ui.layout_column_wrap(width=1 / 2):
+                    with ui.card():
+                        @render_plotly
+                        def plot_duration_distribution_no_sponsor():
+                            """
+                            Generate a histogram showing the distribution of video durations for No sponsor data.
+                            """
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'No sponsor'],
+                                                         input.date_range())
+                            filtered_df['duration'] = pd.to_numeric(filtered_df['duration'], errors='coerce')
+                            fig = px.histogram(filtered_df, x='duration', nbins=50,
+                                               title='No Sponsor',
+                                               labels={'duration': 'Duration (seconds)'},
+                                               color_discrete_sequence=['#006E90'])
+                            fig.update_layout(
+                                xaxis_title='Duration (seconds)',
+                                yaxis_title='Number of Videos',
+                                bargap=0.2,
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                title_font=dict(color='#006E90'),
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
+
+                    with ui.card():
+                        @render_plotly
+                        def plot_duration_distribution_xtb():
+                            """
+                            Generate a histogram showing the distribution of video durations for XTB data.
+                            """
+                            filtered_df = filter_by_date(df_videos[df_videos['sponsor'] == 'XTB'], input.date_range())
+                            filtered_df['duration'] = pd.to_numeric(filtered_df['duration'], errors='coerce')
+                            fig = px.histogram(filtered_df, x='duration', nbins=50,
+                                               title='XTB',
+                                               labels={'duration': 'Duration (seconds)'},
+                                               color_discrete_sequence=['#B80C09'])
+                            fig.update_layout(
+                                xaxis_title='Duration (seconds)',
+                                yaxis_title='Number of Videos',
+                                bargap=0.2,
+                                plot_bgcolor='rgba(0,0,0,0)',
+                                title_font=dict(color='#B80C09'),
+                                xaxis=dict(showgrid=True, gridcolor='lightgrey'),
+                                yaxis=dict(showgrid=True, gridcolor='lightgrey')
+                            )
+                            return fig
 
 with ui.nav_panel("Data"):
     "Data Grid"

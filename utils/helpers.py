@@ -1,6 +1,7 @@
 # utils/helpers.py
 
 from datetime import datetime
+
 import pandas as pd
 
 
@@ -31,23 +32,3 @@ def filter_by_date(df: pd.DataFrame, date_range: tuple) -> pd.DataFrame:
     rng = sorted(date_range)
     dates = pd.to_datetime(df["date"], format="%Y-%m-%d").dt.date
     return df[(dates >= rng[0]) & (dates <= rng[1])]
-
-
-def get_filtered_data(df: pd.DataFrame, date_range: tuple, sponsor: str) -> pd.DataFrame:
-    """
-    Get the filtered data based on the date range and sponsor.
-
-    Args:
-        df (pd.DataFrame): DataFrame to filter.
-        date_range (tuple): Date range for filtering.
-        sponsor (str): Sponsor filter value.
-
-    Returns:
-        pd.DataFrame: Filtered DataFrame.
-    """
-    df_filtered = filter_by_date(df, date_range)
-    if sponsor == 'XTB':
-        return df_filtered[df_filtered['sponsor'] == 'XTB']
-    elif sponsor == 'No sponsor':
-        return df_filtered[df_filtered['sponsor'] == 'No sponsor']
-    return df_filtered
