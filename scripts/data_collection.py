@@ -1,9 +1,12 @@
 import logging
 import os
 from typing import List, Dict
+
 import pandas as pd
 from googleapiclient.discovery import build, Resource
 from googleapiclient.errors import HttpError
+
+import config
 
 logging.basicConfig(
     level=logging.INFO,
@@ -16,7 +19,7 @@ logging.basicConfig(
 
 
 def load_api_key() -> str:
-    api_key = os.environ.get('YouTubeAPI')
+    api_key = os.environ.get(config.YOUTUBE_API_KEY_ENV)
     if not api_key:
         raise ValueError("YouTube API key not found in environment variables.")
     return api_key
@@ -58,7 +61,8 @@ def get_uploads_playlist_id(youtube: Resource, channel_id: str) -> str:
 def get_videos_in_playlist(youtube: Resource, playlist_id: str) -> List[Dict]:
     """Retrieve all videos in a specified YouTube playlist."""
     videos = []
-    request = youtube.playlistItems().list(part='snippet', playlistId=playlist_id, maxResults=50)
+    request = youtube.playlistItems().list(part='snippet', playlistId=playlist_id,
+                                           maxResults=config.MAX_RESULTS_PER_PAGE)
     while request is not None:
         try:
             response = request.execute()
@@ -70,12 +74,14 @@ def get_videos_in_playlist(youtube: Resource, playlist_id: str) -> List[Dict]:
     return videos
 
 
-def get_video_details(youtube: Resource, video_ids: List[str]) -> List[Dict]:
+def get_video_details(youtube: Resource, video_ids: List[str],
+                      max_results_per_page: int = config.MAX_RESULTS_PER_PAGE) -> List[Dict]:
     """Retrieve details for a list of YouTube video IDs."""
     details = []
-    for i in range(0, len(video_ids), 50):
+    for i in range(0, len(video_ids), max_results_per_page):
         try:
-            request = youtube.videos().list(part='snippet,contentDetails,statistics', id=','.join(video_ids[i:i + 50]))
+            request = youtube.videos().list(part='snippet,contentDetails,statistics',
+                                            id=','.join(video_ids[i:i + max_results_per_page]))
             response = request.execute()
             details += response['items']
         except HttpError as e:
@@ -95,7 +101,8 @@ def get_all_videos_and_details(youtube: Resource, channel_id: str) -> List[Dict]
     return video_details
 
 
-def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict], base_dir: str) -> None:
+def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict], base_dir: str,
+                     encoding: str = config.CSV_ENCODING) -> None:
     """Save channel statistics and video details to CSV files."""
     channel_info = pd.DataFrame([channel_stats], columns=['title', 'subscriberCount', 'viewCount', 'videoCount'])
     video_data = [
@@ -116,14 +123,14 @@ def save_data_to_csv(channel_stats: Dict[str, any], video_details: List[Dict], b
     channel_info_path = os.path.join(base_dir, 'data', 'channel_stats.csv')
     video_stats_path = os.path.join(base_dir, 'data', 'video_stats.csv')
 
-    channel_info.to_csv(channel_info_path, index=False)
-    video_df.to_csv(video_stats_path, index=False)
+    channel_info.to_csv(channel_info_path, index=False, encoding=encoding)
+    video_df.to_csv(video_stats_path, index=False, encoding=encoding)
 
 
 def main():
     api_key = load_api_key()
     youtube = build_youtube_service(api_key)
-    channel_id = 'UCHD-eeo8AnqR--UUn52FUTg'
+    channel_id = config.CHANNEL_ID
 
     channel_stats = get_channel_stats(youtube, channel_id)
     video_details = get_all_videos_and_details(youtube, channel_id)
@@ -132,9 +139,9 @@ def main():
     save_data_to_csv(channel_stats, video_details, base_dir)
 
     print("Channel Stats DataFrame")
-    print(pd.read_csv(os.path.join(base_dir, 'data', 'channel_stats.csv')))
+    print(pd.read_csv(os.path.join(base_dir, 'data', 'channel_stats.csv'), encoding=config.CSV_ENCODING))
     print("Video Details DataFrame")
-    print(pd.read_csv(os.path.join(base_dir, 'data', 'video_stats.csv')))
+    print(pd.read_csv(os.path.join(base_dir, 'data', 'video_stats.csv'), encoding=config.CSV_ENCODING))
 
 
 if __name__ == "__main__":

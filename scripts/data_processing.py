@@ -1,9 +1,33 @@
-import isodate
-import pandas as pd
+import logging
 import os
 
+import isodate
+import pandas as pd
 
-def load_data(file_path: str) -> pd.DataFrame:
+import config
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler("logs/data_processing.log"),
+        logging.StreamHandler()
+    ]
+)
+
+
+def check_read_permissions(file_path: str) -> None:
+    if not os.access(file_path, os.R_OK):
+        raise PermissionError(f"Read permission denied for file {file_path}")
+
+
+def check_write_permissions(file_path: str) -> None:
+    dir_name = os.path.dirname(file_path)
+    if not os.access(dir_name, os.W_OK):
+        raise PermissionError(f"Write permission denied for directory {dir_name}")
+
+
+def load_data(file_path: str, encoding: str = config.CSV_ENCODING) -> pd.DataFrame:
     """
     Load data from a CSV file into a DataFrame.
 
@@ -13,11 +37,37 @@ def load_data(file_path: str) -> pd.DataFrame:
     Returns:
         pd.DataFrame: DataFrame containing the data from the CSV file.
     """
+    if not os.path.exists(file_path):
+        logging.error(f"The file {file_path} does not exist.")
+        raise FileNotFoundError(f"The file {file_path} does not exist.")
+
+    check_read_permissions(file_path)
+
     try:
-        return pd.read_csv(file_path)
-    except FileNotFoundError as e:
-        print(f"Error: {e}")
-        raise
+        return pd.read_csv(file_path, encoding=encoding)
+    except pd.errors.ParserError as e:
+        logging.error(f"Error parsing the file {file_path}: {e}")
+        raise ValueError(f"Error parsing the file {file_path}: {e}")
+
+
+def save_data(df: pd.DataFrame, file_path: str, encoding: str = config.CSV_ENCODING) -> None:
+    """
+    Save DataFrame to a CSV file.
+
+    Args:
+        df (pd.DataFrame): DataFrame to be saved.
+        file_path (str): Path to the CSV file (can be a file name or an absolute path).
+    """
+    dir_name = os.path.dirname(file_path)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    check_write_permissions(file_path)
+
+    try:
+        df.to_csv(file_path, index=False, encoding=encoding)
+    except IOError as e:
+        logging.error(f"Error writing the file {file_path}: {e}")
+        raise IOError(f"Error writing the file {file_path}: {e}")
 
 
 def process_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -61,23 +111,21 @@ def process_data(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def save_data(df: pd.DataFrame, file_path: str) -> None:
-    """
-    Save DataFrame to a CSV file.
-
-    Args:
-        df (pd.DataFrame): DataFrame to be saved.
-        file_path (str): Path to the CSV file (can be a file name or an absolute path).
-    """
-    df.to_csv(file_path, index=False)
-
-
 if __name__ == "__main__":
     base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     video_stats_path = os.path.join(base_dir, 'data', 'video_stats.csv')
 
-    video_info = load_data(video_stats_path)
-    video_info = process_data(video_info)
+    try:
+        video_info = load_data(video_stats_path)
+        video_info = process_data(video_info)
+    except Exception as e:
+        logging.error(f"An error occurred while loading or processing data: {e}")
+        exit(1)
 
     processed_video_stats_path = os.path.join(base_dir, 'data', 'processed_video_stats.csv')
-    save_data(video_info, processed_video_stats_path)
+
+    try:
+        save_data(video_info, processed_video_stats_path)
+    except Exception as e:
+        logging.error(f"An error occurred while saving data: {e}")
+        exit(1)

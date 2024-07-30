@@ -1,0 +1,6 @@
+# config.py
+
+YOUTUBE_API_KEY_ENV = 'YouTubeAPI'
+CHANNEL_ID = 'UCHD-eeo8AnqR--UUn52FUTg'
+MAX_RESULTS_PER_PAGE = 50
+CSV_ENCODING = 'utf-8'
