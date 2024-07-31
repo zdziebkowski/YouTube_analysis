@@ -75,6 +75,14 @@ with ui.nav_panel("Analysis"):
                 engagement_rate = (total_likes + total_comments) / total_views * 100
                 return f"{engagement_rate:,.2f}%".replace(',', ' ')
 
+    @render.text
+    def text_kpis():
+        return """
+        The channel has 131,000 subscribers and over 18 million views, with an average of 44,636 views per video 
+        and a 6.32% engagement rate. This active audience can significantly boost XTB's brand visibility and 
+        customer acquisition.
+        """
+
     with ui.layout_sidebar():
         with ui.sidebar(bg="#f8f8f8"):
             "Filter options"
@@ -161,6 +169,14 @@ with ui.nav_panel("Analysis"):
                             )
                             return fig
 
+                @render.text
+                def text_cumulative():
+                    return """
+                    The cumulative views chart shows consistent growth in viewership for both non-sponsored and 
+                    XTB-sponsored videos. XTB-sponsored content has seen rapid growth since early 2023, indicating 
+                    strong viewer interest and effective sponsorship.
+                    """
+
         with ui.layout_column_wrap(fill=False):
             with ui.card():
                 "Top Performing Videos"
@@ -233,6 +249,13 @@ with ui.nav_panel("Analysis"):
                                 yaxis=dict(showgrid=True, gridcolor='lightgrey')
                             )
                             return fig
+
+                @render.text
+                def text_top_performing():
+                    return """
+                    Top-performing videos, both sponsored and non-sponsored, receive high likes and comments per 
+                    1000 views. XTB-sponsored videos have a balanced distribution of likes but fewer comments.
+                    """
 
         with ui.layout_column_wrap(fill=False):
             with ui.card():
@@ -319,6 +342,14 @@ with ui.nav_panel("Analysis"):
                             )
                             return fig
 
+                @render.text
+                def text_boxplot():
+                    return """
+                    Engagement metrics show non-sponsored videos have higher variability, while XTB-sponsored content 
+                    is consistently performing. Increasing interaction could amplify the sponsorship's impact and 
+                    enhance viewer loyalty.
+                    """
+
         with ui.layout_column_wrap(fill=False):
             with ui.card():
                 "Distribution of video durations"
@@ -369,6 +400,15 @@ with ui.nav_panel("Analysis"):
                                 yaxis=dict(showgrid=True, gridcolor='lightgrey')
                             )
                             return fig
+
+
+                @render.text
+                def text_dist():
+                    return """
+                    XTB-sponsored videos are generally shorter and more concise, aligning with audience attention spans 
+                    and potentially increasing retention rates. Keeping content engaging within this timeframe 
+                    maximizes sponsorship effectiveness.
+                    """
 
 with ui.nav_panel("Data"):
     "Data Grid"
