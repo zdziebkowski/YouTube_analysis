@@ -1,6 +1,6 @@
 # utils/helpers.py
 
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pandas as pd
 
@@ -29,6 +29,7 @@ def filter_by_date(df: pd.DataFrame, date_range: tuple) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Filtered DataFrame.
     """
-    rng = sorted(date_range)
+    start_date, end_date = sorted(date_range)
+    end_date += timedelta(days=2)
     dates = pd.to_datetime(df["date"], format="%Y-%m-%d").dt.date
-    return df[(dates >= rng[0]) & (dates <= rng[1])]
+    return df[(dates >= start_date) & (dates < end_date)]

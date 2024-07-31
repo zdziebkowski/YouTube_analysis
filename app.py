@@ -42,6 +42,16 @@ with ui.nav_panel("Analysis"):
                 total_views = filtered_df['views'].sum()
                 return f"{total_views:,}".replace(',', ' ')
 
+        with ui.value_box(showcase=icon_svg("youtube")):
+            "Total videos"
+
+
+            @render.text
+            def total_videos():
+                filtered_df = filter_by_date(df_videos, input.date_range())
+                total_videos_count = filtered_df.shape[0]
+                return f"{total_videos_count:,}"
+
         with ui.value_box(showcase=icon_svg("chart-line")):
             "Average views"
 
