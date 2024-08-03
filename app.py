@@ -22,67 +22,6 @@ ui.page_opts(
 )
 
 with ui.nav_panel("Analysis"):
-    with ui.layout_column_wrap(fill=False):
-        with ui.value_box(showcase=icon_svg("child-reaching")):
-            "Total subscribers"
-
-
-            @render.text
-            def total_subs():
-                total_subscribers = df_channel['subscriberCount'].iloc[0]
-                return f"{total_subscribers:,}".replace(',', ' ')
-
-        with ui.value_box(showcase=icon_svg("eye")):
-            "Total views"
-
-
-            @render.text
-            def total_views():
-                filtered_df = filter_by_date(df_videos, input.date_range())
-                total_views = filtered_df['views'].sum()
-                return f"{total_views:,}".replace(',', ' ')
-
-        with ui.value_box(showcase=icon_svg("youtube")):
-            "Total videos"
-
-
-            @render.text
-            def total_videos():
-                filtered_df = filter_by_date(df_videos, input.date_range())
-                total_videos_count = filtered_df.shape[0]
-                return f"{total_videos_count:,}"
-
-        with ui.value_box(showcase=icon_svg("chart-line")):
-            "Average views"
-
-
-            @render.text
-            def avg_views():
-                filtered_df = filter_by_date(df_videos, input.date_range())
-                average_views = filtered_df['views'].mean()
-                return f"{average_views:,.0f}".replace(',', ' ')
-
-        with ui.value_box(showcase=icon_svg("hand-point-up")):
-            "Engagement Rate"
-
-
-            @render.text
-            def engagement_rate():
-                filtered_df = filter_by_date(df_videos, input.date_range())
-                total_views = filtered_df['views'].sum()
-                total_likes = filtered_df['likes'].sum()
-                total_comments = filtered_df['comments'].sum()
-                engagement_rate = (total_likes + total_comments) / total_views * 100
-                return f"{engagement_rate:,.2f}%".replace(',', ' ')
-
-    @render.text
-    def text_kpis():
-        return """
-        The channel has 131,000 subscribers and over 18 million views, with an average of 44,636 views per video 
-        and a 6.32% engagement rate. This active audience can significantly boost XTB's brand visibility and 
-        customer acquisition.
-        """
-
     with ui.layout_sidebar():
         with ui.sidebar(bg="#f8f8f8"):
             "Filter options"
@@ -91,6 +30,68 @@ with ui.nav_panel("Analysis"):
                             max=string_to_date('2024-07-25'),
                             value=[string_to_date(x) for x in ['2017-03-04', '2024-07-25']]
                             )
+        with ui.layout_column_wrap(fill=False):
+            with ui.value_box(showcase=icon_svg("child-reaching")):
+                "Total subscribers"
+
+
+                @render.text
+                def total_subs():
+                    total_subscribers = df_channel['subscriberCount'].iloc[0]
+                    return f"{total_subscribers:,}".replace(',', ' ')
+
+            with ui.value_box(showcase=icon_svg("eye")):
+                "Total views"
+
+
+                @render.text
+                def total_views():
+                    filtered_df = filter_by_date(df_videos, input.date_range())
+                    total_views = filtered_df['views'].sum()
+                    return f"{total_views:,}".replace(',', ' ')
+
+            with ui.value_box(showcase=icon_svg("youtube")):
+                "Total videos"
+
+
+                @render.text
+                def total_videos():
+                    filtered_df = filter_by_date(df_videos, input.date_range())
+                    total_videos_count = filtered_df.shape[0]
+                    return f"{total_videos_count:,}"
+
+            with ui.value_box(showcase=icon_svg("chart-line")):
+                "Average views"
+
+
+                @render.text
+                def avg_views():
+                    filtered_df = filter_by_date(df_videos, input.date_range())
+                    average_views = filtered_df['views'].mean()
+                    return f"{average_views:,.0f}".replace(',', ' ')
+
+            with ui.value_box(showcase=icon_svg("hand-point-up")):
+                "Engagement Rate"
+
+
+                @render.text
+                def engagement_rate():
+                    filtered_df = filter_by_date(df_videos, input.date_range())
+                    total_views = filtered_df['views'].sum()
+                    total_likes = filtered_df['likes'].sum()
+                    total_comments = filtered_df['comments'].sum()
+                    engagement_rate = (total_likes + total_comments) / total_views * 100
+                    return f"{engagement_rate:,.2f}%".replace(',', ' ')
+
+
+        @render.text
+        def text_kpis():
+            return """
+            The channel has 131,000 subscribers and over 18 million views, with an average of 44,636 views per video 
+            and a 6.32% engagement rate. This active audience can significantly boost XTB's brand visibility and 
+            customer acquisition.
+            """
+
 
         with ui.layout_column_wrap(fill=False):
             with ui.card():
@@ -168,6 +169,7 @@ with ui.nav_panel("Analysis"):
                                 yaxis=dict(showgrid=True, gridcolor='lightgrey')
                             )
                             return fig
+
 
                 @render.text
                 def text_cumulative():
@@ -249,6 +251,7 @@ with ui.nav_panel("Analysis"):
                                 yaxis=dict(showgrid=True, gridcolor='lightgrey')
                             )
                             return fig
+
 
                 @render.text
                 def text_top_performing():
@@ -341,6 +344,7 @@ with ui.nav_panel("Analysis"):
                                 yaxis=dict(showgrid=True, gridcolor='lightgrey')
                             )
                             return fig
+
 
                 @render.text
                 def text_boxplot():
